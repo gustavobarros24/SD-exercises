@@ -1,18 +1,42 @@
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class BancoMultiplasContas {
 
     private static class Account {
+        Lock lock = new ReentrantLock();
         private int balance;
-        Account (int balance) { this.balance = balance; }
-        int balance () { return balance; }
-        boolean deposit (int value) {
-            balance += value;
-            return true;
+        Account (int balance) { 
+            this.balance = balance; 
         }
+
+        int balance () { 
+            return balance; 
+        }
+
+        boolean deposit (int value) {
+            try{
+                lock.lock();
+                balance = balance + value;
+                return true;
+            }
+            finally{
+                lock.unlock();
+            }
+        }
+
         boolean withdraw (int value) {
-            if (value > balance)
-                return false;
-            balance -= value;
-            return true;
+            try{
+                lock.lock();
+                if(value>balance){
+                    return false;
+                }
+                balance = balance - value;
+                return true;
+            }
+            finally{
+                lock.unlock();
+            }
         }
     }
 
@@ -51,12 +75,47 @@ public class BancoMultiplasContas {
 
     // Transfer
     public boolean transfer (int from, int to, int value) {
-        return false;
+        if(from < to){
+            av[from].lock.lock();
+            av[to].lock.lock();
+        }
+        else{
+            av[to].lock.lock();
+            av[from].lock.lock();
+        }
+        if(withdraw(from,value) == false){
+            return false;
+        }
+        deposit(to,value);
+        if(from < to){
+            av[to].lock.unlock();
+            av[from].lock.unlock();
+        }
+        else{
+            av[from].lock.unlock();
+            av[to].lock.unlock();
+        }
+        return true;
     }
 
     // TotalBalance
     public int totalBalance () {
-        return 0;
+        int total = 0;
+        for (int i = 0; i < total; i++){
+            this.av[i].lock.lock();
+        }
+        try{
+            for(int i = 0; i < slots; i++){
+                total = total + balance(i);
+                this.av[i].lock.unlock();       //unlock aqui por questões de eficiência
+            }
+            return total;
+        }
+        finally{
+            //for(int i = 0; i<slots; i++){     Dá o unlock mais cedo quando soma logo essa conta por questões de eficiência
+            //    this.av[i].lock.lock();
+            //}
+        }
     }
 }
 
