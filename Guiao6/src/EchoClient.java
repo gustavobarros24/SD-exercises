@@ -22,12 +22,16 @@ public class EchoClient {
                 String response = in.readLine();
                 System.out.println("Server response: " + response);
             }
-
             socket.shutdownOutput();
+
+            String media = in.readLine();
+            System.out.println("Media: " + media);
+
             socket.shutdownInput();
             socket.close();
 
-        } catch (Exception e) {
+        } 
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
