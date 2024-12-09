@@ -1,22 +1,34 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import static java.util.Arrays.asList;
+import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 class ContactManager {
     private HashMap<String, Contact> contacts = new HashMap<>();
+    private ReentrantLock lock = new ReentrantLock();
 
     // @TODO
     public void update(Contact c) {
-        
+        this.lock.lock();
+        this.contacts.put(c.name(), c);
+        this.lock.unlock();
     }
 
     // @TODO
     public ContactList getContacts() {
-
+        try {
+            this.lock.lock();
+            ContactList cl = new ContactList();
+            cl.addAll(contacts.values().stream().map(Contact::clone).toList());
+            return cl;
+        } 
+        finally {
+            this.lock.unlock();
+        }
      }
 }
 
@@ -32,7 +44,16 @@ class ServerWorker implements Runnable {
     // @TODO
     @Override
     public void run() {
+        try(DataInputStream in = new DataInputStream(socket.getInputStream()); DataOutputStream out = new DataOutputStream(socket.getOutputStream())){
+            Contact contact = Contact.deserialize(in);
+            manager.update(contact);
 
+            ContactList contactList = manager.getContacts();
+            contactList.serialize(out);
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
      }
 }
 

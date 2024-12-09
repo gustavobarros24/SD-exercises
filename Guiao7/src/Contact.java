@@ -36,12 +36,40 @@ class Contact {
 
     // @TODO
     public void serialize(DataOutputStream out) throws IOException {
-
+        out.writeUTF(name);
+        out.writeInt(age);
+        out.writeLong(phoneNumber);
+        if(company != null){
+            out.writeUTF(company);
+        }
+        else{
+            out.writeUTF("null");
+        }
+        out.writeInt(emails.size());
+        for(String i : emails){
+            out.writeUTF(i);
+        }
      }
 
     // @TODO
     public static Contact deserialize(DataInputStream in) throws IOException {
-
+        String name = in.readUTF();
+        int age = in.readInt();
+        long phoneNumber = in.readLong();
+        String readCompany = in.readUTF();
+        String company;
+        if("null".equals(readCompany)){
+            company = null;
+        }
+        else{
+            company = readCompany;
+        }
+        int emailsSize = in.readInt();
+        List<String> emails = new ArrayList<>(emailsSize);
+        for(int i = 0; i < emailsSize; i++){
+            emails.add(in.readUTF());
+        }
+        return new Contact(name, age, phoneNumber, company, emails);
      }
 
     public String toString() {
@@ -53,6 +81,11 @@ class Contact {
         builder.append(this.emails.toString());
         builder.append("}");
         return builder.toString();
+    }
+
+    @Override
+    public Contact clone(){
+        return new Contact(this.name, this.age, this.phoneNumber, this.company, new ArrayList<>(this.emails));
     }
 
 }
